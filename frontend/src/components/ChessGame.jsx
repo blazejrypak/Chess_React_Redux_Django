@@ -1,10 +1,10 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import chess_pieces from '../img/chess_pieces.png'
-import {games} from '../actions'
+import {games, auth} from '../actions'
 
 class ChessGame extends Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         this.chessBoardSize = 800;
         this.countClicks = 0;
@@ -27,17 +27,13 @@ class ChessGame extends Component {
         } else {
             this.secondClick = data;
             console.log(this.firstClick, ">>>", this.secondClick);
+            console.log(this.props);
             this.props.Move(this.firstClick, this.secondClick, this.props.game[0].id);
             this.countClicks = 0;
             // this.firstClick = 0;
             // this.secondClick = 0;
-            }
+        }
     };
-
-    // handleUpdateClick() {
-    //     this.props.startGame();
-    //
-    // }
 
     UNSAFE_componentWillMount() {
         this.props.startGame();
@@ -112,7 +108,8 @@ class ChessGame extends Component {
                 };
                 const square = (
                     <td style={td_style} key={`${String.fromCharCode(65 + i) + j.toString()}`}>
-                        <div onClick={() => this.handleClick((i + 1) * 10 + j)} className="square" key={`${String.fromCharCode(65 + i) + j.toString()}`}>
+                        <div onClick={() => this.handleClick((i + 1) * 10 + j)} className="square"
+                             key={`${String.fromCharCode(65 + i) + j.toString()}`}>
                             <li key={`${String.fromCharCode(65 + i) + j.toString()}`} style={{
                                 background: `url(${chess_pieces}) ${img_sprite}`,
                                 width: (this.chessBoardSize / 8) - 10,
@@ -133,18 +130,22 @@ class ChessGame extends Component {
     render() {
         return (
             <div>
-                <p>{console.log("RENDER")}</p>
-                {/*<button onClick={this.handleUpdateClick}>UPDATE!</button>*/}
-            <div className="chessboard">
-                <table style={{
-                    width: this.chessBoardSize,
-                    height: this.chessBoardSize,
-                    border: 5
-                }}>
-                    <tbody>{this.CreateChess()}</tbody>
-                </table>
-            </div>
+                <h2>Welcome to Super Chess Game!</h2>
+                <hr/>
+                <div style={{textAlign: "right"}}>
+                    <h1>{this.props.user.username} <button onClick={this.props.logout}>Logout</button></h1>
                 </div>
+                <p>{console.log("RENDER")}</p>
+                <div className="chessboard">
+                    <table style={{
+                        width: this.chessBoardSize,
+                        height: this.chessBoardSize,
+                        border: 5
+                    }}>
+                        <tbody>{this.CreateChess()}</tbody>
+                    </table>
+                </div>
+            </div>
         );
     }
 }
@@ -155,6 +156,7 @@ const mapStateToProps = state => {
     console.log(state.games);
     return {
         game: state.games,
+        user: state.auth.user,
     }
 };
 
@@ -169,6 +171,7 @@ const mapDispatchToProps = dispatch => {
         fetchGame: (id) => {
             dispatch(games.fetchGame(id));
         },
+        logout: () => dispatch(auth.logout()),
     }
 };
 

@@ -1,21 +1,66 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, generics
 
 from .models import Game, Move
 from .serializers import GameSerializers, MoveSerializers
+
 from django.http import HttpResponse, JsonResponse
 from rest_framework.response import Response
 from .chess_game import ChessGame
 from .create_figures import CreateFigures
 from pprint import pprint
 
+from knox.models import AuthToken
+from .serializers import CreateUserSerializer, UserSerializer, LoginUserSerializer
+
+
+class LoginAPI(generics.GenericAPIView):
+    serializer_class = LoginUserSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data
+        return Response({
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "token": AuthToken.objects.create(user)
+        })
+
+
+class UserAPI(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated, ]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user
+
+
+class RegistrationApi(generics.GenericAPIView):
+    serializer_class = CreateUserSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "token": AuthToken.objects.create(user)
+        })
+
 
 class GameViewSet(viewsets.ModelViewSet):
-    queryset = Game.objects.all()
-    permissions_classes = [permissions.AllowAny, ]
+    permissions_classes = [permissions.IsAuthenticated, ]
     serializer_class = GameSerializers
+
+    def get_queryset(self):
+        return self.request.user.games.all()
+
+    def perform_create(self, serializer):
+        game_col = "RKBQTBKRPPPPPPPPnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnpppppppprkbqtbkr"
+        serializer.save(game_collation=game_col, user=self.request.user)
 
 
 class MoveViewSet(viewsets.ViewSet):
+    permissions_classes = [permissions.IsAuthenticated, ]
 
     def list(self, request):
         queryset = Move.objects.all()
@@ -49,16 +94,5 @@ class MoveViewSet(viewsets.ViewSet):
         del game_instance
         del create_figures_instance
         serializer = MoveSerializers(move_obj)
-        return JsonResponse(serializer.data)
-
-def new_game(request):
-    """
-    List all code snippets, or create a new snippet.
-    """
-    if request.method == 'GET':
-        new__game = "RKBQTBKRPPPPPPPPnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnpppppppprkbqtbkr"
-        obj = Game(game_collation=new__game)
-        obj.save()
-        serializer = GameSerializers(obj)
         return JsonResponse(serializer.data)
 

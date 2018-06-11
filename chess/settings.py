@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'webpack_loader',
     'masterchess.apps.MasterchessConfig',
     'rest_framework',
+    'knox',
 ]
 
 MIDDLEWARE = [
@@ -127,4 +128,10 @@ WEBPACK_LOADER = {
             'BUNDLE_DIR_NAME': 'bundles/',
             'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.dev.json'),
         }
+}
+
+# Rest framework settings
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
 }
